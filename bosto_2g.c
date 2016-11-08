@@ -131,16 +131,10 @@ static const int hw_mscevents[] = {
 	MSC_SERIAL,
 };
 
-static const int hw_btnevents[] = {
-/*
-	BTN_STYLUS 		seems to be the same as a center mouse button above the roll wheel.
- 	BTN_STYLUS2		right mouse button (Gedit)
- 	BTN_DIGI		seems to do nothing in relation to the stylus tool
-	BTN_TOUCH		left mouse click, or pen contact with the tablet surface. Remains asserted whenever the pen has contact..
-*/
+#define MY_BUTTON BTN_RIGHT
 
-	//BTN_DIGI, BTN_TOUCH, BTN_STYLUS, BTN_STYLUS2, BTN_TOOL_PEN, BTN_TOOL_BRUSH, BTN_TOOL_RUBBER, BTN_TOOL_PENCIL, BTN_TOOL_AIRBRUSH, BTN_TOOL_FINGER, BTN_TOOL_MOUSE
-  BTN_TOUCH, BTN_TOOL_PEN, BTN_TOOL_RUBBER, BTN_STYLUS, BTN_RIGHT //, BTN_STYLUS2
+static const int hw_btnevents[] = {
+  BTN_TOUCH, BTN_TOOL_PEN, BTN_TOOL_RUBBER, BTN_LEFT, MY_BUTTON //, BTN_STYLUS2
 };
 
 
@@ -152,18 +146,18 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
    dev_dbg(&dev->dev, "Bosto_packet:  [B0:-:B8] %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x Time:%li\n",	  data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], jiffies);
    
   if(0x80==data[1]){ //idle on withdraw, pre tool-change
-    input_report_key(input_dev, BTN_STYLUS, 0);
-    input_report_key(input_dev, BTN_TOUCH, 0);
+    input_report_key(input_dev, BTN_LEFT, 0);
+    //   input_report_key(input_dev, BTN_TOUCH, 0);
     input_report_key(input_dev, BTN_TOOL_PEN, 0);
-    input_report_key(input_dev, BTN_RIGHT, 0);
+    input_report_key(input_dev, MY_BUTTON, 0);
   } else
     if (0xC2 == data[1]) { //tool change
       //      input_report_key(input_dev, BTN_TOOL_PEN,    (0x20==(data[3]&0xF0)) ? 1 : 0);
       //  input_report_key(input_dev, BTN_TOOL_RUBBER, (0xA0==(data[3]&0xF0)) ? 1 : 0);
     } else { //A0=prox,E0=touch
       input_report_key(input_dev, BTN_TOOL_PEN,(0xA0==(data[1]&0xA0))); //proximity
-      input_report_key(input_dev, BTN_TOUCH,   (0xE0==(data[1]&0xE0)));
-      input_report_key(input_dev, BTN_RIGHT, data[1]&0x02);
+      input_report_key(input_dev, BTN_LEFT,   (0xE0==(data[1]&0xE0)));
+      input_report_key(input_dev, MY_BUTTON, data[1]&0x02);
       input_report_abs(input_dev,ABS_X,get_unaligned_be16(&data[2]));
       input_report_abs(input_dev,ABS_Y,get_unaligned_be16(&data[4]));
       input_report_abs(input_dev,ABS_PRESSURE,(get_unaligned_be16(&data[6]) >> 6) << 1);
