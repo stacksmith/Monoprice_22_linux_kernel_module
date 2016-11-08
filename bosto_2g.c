@@ -98,11 +98,11 @@ struct bosto_2g {
 	struct urb *irq;
 	const struct bosto_2g_features *features;
 	unsigned int current_tool;
-	unsigned int current_id;
-	bool tool_update;
+  //	unsigned int current_id;
+  //	bool tool_update;
 	bool stylus_btn_state;
 	bool stylus_prox;
-	bool report;
+  //	bool report;
 	char name[64];
 	char phys[32];
 };
@@ -143,6 +143,8 @@ static const int hw_mscevents[] = {
 };
 
 static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
+  bool tool_update = false;
+  bool report = false;
   
   unsigned char *data = bosto_2g->data;
   struct input_dev *input_dev = bosto_2g->dev;
@@ -172,15 +174,15 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
       //input_report_abs(input_dev, ABS_MISC, bosto_2g->current_id);
       //input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
       //input_sync(input_dev);
-      bosto_2g->current_id = 0;
+      bosto_2g->current_tool = 0;
       //bosto_2g->current_tool = 0;
-      bosto_2g->tool_update = false;
+      tool_update = false;
       bosto_2g->stylus_prox = false;
-      bosto_2g->report = true;
+      report = true;
       dev_dbg(&dev->dev, "Bosto TOOL OUT");
     } else {
-      bosto_2g->tool_update = false;
-      bosto_2g->report = false;
+      tool_update = false;
+      report = false;
     }
     break;
     // button event
@@ -190,7 +192,7 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     switch (data[3] & 0xf0) {
       // Stylus Tip in prox. Bosto 22HD
     case 0x20:
-      if(BTN_TOOL_PEN != bosto_2g->current_id){
+      if(BTN_TOOL_PEN != bosto_2g->current_tool){
 	bosto_2g->current_tool = BTN_TOOL_PEN;
 	input_report_key(input_dev, BTN_TOOL_PEN, 1);
 	dev_dbg(&dev->dev, "Bosto BUTTON: PEN pressed");
@@ -205,9 +207,9 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
       }
       break;
      default:
-      bosto_2g->current_id = 0; dev_dbg(&dev->dev, "Unknown tablet tool %02x ", data[0]);
+      bosto_2g->current_tool = 0; dev_dbg(&dev->dev, "Unknown tablet tool %02x ", data[0]);
     }
-    bosto_2g->report = true;
+    report = true;
     break;
     
     /* Stylus in proximity */
@@ -237,16 +239,16 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
       bosto_2g->stylus_btn_state = false;
       dev_dbg(&dev->dev, "Bosto BUTTON: BTN_STYLUS released");
     } 
-    bosto_2g->report = true;
-    bosto_2g->tool_update = true;
+    report = true;
+    tool_update = true;
     break;
    
   default:
     dev_dbg(&dev->dev, "Error packet. Packet data[1]:  %02x ", data[1]);
-    bosto_2g->report = false;
+    report = false;
   }
   
-  if(bosto_2g->tool_update) {
+  if(tool_update) {
     input_report_abs(input_dev, ABS_X, x);
     input_report_abs(input_dev, ABS_Y, y);
     input_report_abs(input_dev, ABS_PRESSURE, p);
@@ -255,15 +257,15 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     dev_dbg(&dev->dev, "Bosto ABS_Y:  %02x ", y);
     dev_dbg(&dev->dev, "Bosto ABS_PRESSURE:  %02x ", p);
   }
-  if(bosto_2g->report){
-    input_report_abs(input_dev, ABS_MISC, bosto_2g->current_id);
+  if(report){
+    input_report_abs(input_dev, ABS_MISC, bosto_2g->current_tool); //a little bogus - tools not enum'd
     input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
     input_sync(input_dev);
-    dev_dbg(&dev->dev, "Bosto ABS_MISC:  %02x ", bosto_2g->current_id);
+    dev_dbg(&dev->dev, "Bosto ABS_MISC:  %02x ", bosto_2g->current_tool);
     dev_dbg(&dev->dev, "Bosto MSC_SERIAL:  %02x ", bosto_2g->features->pid);
     dev_dbg(&dev->dev, "Bosto EV_SYNC.");
   }
-  bosto_2g->tool_update = false;
+  tool_update = false;
 }
 
 static void bosto_2g_irq(struct urb *urb)
@@ -382,6 +384,8 @@ static int bosto_2g_probe(struct usb_interface *intf, const struct usb_device_id
   
   bosto_2g->usbdev = dev;
   bosto_2g->dev = input_dev;
+  bosto_2g->current_tool = 0;
+
   
   usb_make_path(dev, bosto_2g->phys, sizeof(bosto_2g->phys));
   strlcat(bosto_2g->phys, "/input0", sizeof(bosto_2g->phys));
