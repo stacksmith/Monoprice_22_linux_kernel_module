@@ -1,3 +1,14 @@
+My Monoprice 22 almost works with Aidyw's Bosto 22HD driver: https://github.com/aidyw/bosto-2g-linux-kernel-module.  According to Aidyw, his Bosto's USB device id is identical to my Monoprice (0b57:9016 via lsusb).  But the x-y range is much bigger, for some reason.
+
+This repo is my take on the driver.  I removed a lot of what I considered unnecessary state information.  
+
+This is highly experimental, and I know very little about Linux drivers.  
+
+Gimp and Krita work on my system, with pressure.  Both tip and eraser seem to do the same thing, much like aidyw's driver.  Monoprice seems to only have one button, even though it looks as 2.  I am working on stuff.
+
+Aidyw's readme follows
+======================
+
 This is a Linux driver for the 2nd generation Bosto Kingtee 22HD and Bosto Kingtee 14WA tablets.
 These tablets were released around November 2013.
 

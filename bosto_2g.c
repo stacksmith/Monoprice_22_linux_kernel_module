@@ -97,9 +97,9 @@ struct bosto_2g {
 	struct usb_device *usbdev;
 	struct urb *irq;
 	const struct bosto_2g_features *features;
-	unsigned int current_tool;
-	bool stylus_btn_state;
-	bool stylus_prox;
+  //	unsigned int current_tool;
+  //	bool stylus_btn_state;
+  //	bool stylus_prox;
 	char name[64];
 	char phys[32];
 };
@@ -134,12 +134,41 @@ static const int hw_absevents[] = {
 
 
 
-
 static const int hw_mscevents[] = {
 	MSC_SERIAL,
 };
 
 static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
+  unsigned char *data = bosto_2g->data;
+  struct input_dev *input_dev = bosto_2g->dev;
+  
+   struct usb_device *dev = bosto_2g->usbdev;
+   dev_dbg(&dev->dev, "Bosto_packet:  [B0:-:B8] %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x Time:%li\n",	  data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], jiffies);
+   
+  if(0x80==data[1]){ //idle on withdraw, pre tool-change
+    input_report_key(input_dev, BTN_STYLUS, 0);
+    input_report_key(input_dev, BTN_TOUCH, 0);
+    input_report_key(input_dev, BTN_TOOL_PEN, 0);
+    input_report_key(input_dev, BTN_TOOL_RUBBER, 0);
+  } else
+    if (0xC2 == data[1]) { //tool change
+      input_report_key(input_dev, BTN_TOOL_PEN,    (0x20==(data[3]&0xF0)) ? 1 : 0);
+      input_report_key(input_dev, BTN_TOOL_RUBBER, (0xA0==(data[3]&0xF0)) ? 1 : 0);
+    } else { //A0=prox,E0=touch
+      input_report_key(input_dev, BTN_TOUCH, data[1]&0x40);
+      input_report_key(input_dev, BTN_STYLUS, data[1]&0x02);
+      input_report_abs(input_dev,ABS_X,get_unaligned_be16(&data[2]));
+      input_report_abs(input_dev,ABS_Y,get_unaligned_be16(&data[4]));
+      input_report_abs(input_dev,ABS_PRESSURE,(get_unaligned_be16(&data[6]) >> 6) << 1);
+    }
+  input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
+  input_sync(input_dev);
+
+}
+
+
+/*
+static void xbosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
   bool update = false;
   bool xyp_update = false;
   
@@ -155,8 +184,7 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
   if(((data[1] & 0xF0) == 0xA0) | ((data[1] & 0xF0) == 0xE0)) pkt_type = 3;	// In proximity float 0xA0  or touch 0xE0
   
   
-  dev_dbg(&dev->dev, "Bosto_packet:  [B0:-:B8] %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x Time:%li\n",
-	  data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], jiffies);
+  dev_dbg(&dev->dev, "Bosto_packet:  [B0:-:B8] %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x Time:%li\n",	  data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], jiffies);
   
   switch (pkt_type) {
   case 1: //0x80 - idle, toolchange follows
@@ -239,7 +267,7 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     dev_dbg(&dev->dev, "Bosto EV_SYNC.");
   }
 }
-
+*/
 static void bosto_2g_irq(struct urb *urb)
 {
   struct bosto_2g *bosto_2g = urb->context;
@@ -356,8 +384,6 @@ static int bosto_2g_probe(struct usb_interface *intf, const struct usb_device_id
   
   bosto_2g->usbdev = dev;
   bosto_2g->dev = input_dev;
-  bosto_2g->current_tool = 0;
-
   
   usb_make_path(dev, bosto_2g->phys, sizeof(bosto_2g->phys));
   strlcat(bosto_2g->phys, "/input0", sizeof(bosto_2g->phys));
