@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
+/* This is an attempt to implement simple/generic touchpad protocol
+ http://linuxwacom.sourceforge.net/wiki/index.php/Kernel_Input_Event_Overview
+*/
 #include <linux/jiffies.h>
 #include <linux/stat.h>
 #include <linux/types.h>
@@ -152,10 +156,11 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     input_report_key(input_dev, BTN_TOOL_RUBBER, 0);
   } else
     if (0xC2 == data[1]) { //tool change
-      input_report_key(input_dev, BTN_TOOL_PEN,    (0x20==(data[3]&0xF0)) ? 1 : 0);
+      //      input_report_key(input_dev, BTN_TOOL_PEN,    (0x20==(data[3]&0xF0)) ? 1 : 0);
       input_report_key(input_dev, BTN_TOOL_RUBBER, (0xA0==(data[3]&0xF0)) ? 1 : 0);
     } else { //A0=prox,E0=touch
-      input_report_key(input_dev, BTN_TOUCH, data[1]&0x40);
+      input_report_key(input_dev, BTN_TOOL_PEN,(0xA0==(data[1]&0xA0))); //proximity
+      input_report_key(input_dev, BTN_TOUCH,   (0xE0==(data[1]&0xE0)));
       input_report_key(input_dev, BTN_STYLUS, data[1]&0x02);
       input_report_abs(input_dev,ABS_X,get_unaligned_be16(&data[2]));
       input_report_abs(input_dev,ABS_Y,get_unaligned_be16(&data[4]));
@@ -405,8 +410,11 @@ static int bosto_2g_probe(struct usb_interface *intf, const struct usb_device_id
   for (i = 0; i < ARRAY_SIZE(hw_absevents); ++i)
     __set_bit(hw_absevents[i], input_dev->absbit);
   
-  for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i)
-    __set_bit(hw_btnevents[i], input_dev->keybit);
+  //for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i)
+  //  __set_bit(hw_btnevents[i], input_dev->keybit);
+  input_dev->keybit[BIT_WORD(BTN_DIGI)] |= BIT_MASK(BTN_TOOL_PEN) | BIT_MASK (BTN_TOUCH) | BIT_MASK (BTN_TOOL_RUBBER) | BIT_MASK (BTN_STYLUS);
+  for(i=0;i<sizeof(hw_btnevents)/sizeof(hw_btnevents[0]);i++)
+	  __set_bit(hw_btnevents[i], input_dev->keybit);
   
   for (i = 0; i < ARRAY_SIZE(hw_mscevents); ++i)
     __set_bit(hw_mscevents[i], input_dev->mscbit);
