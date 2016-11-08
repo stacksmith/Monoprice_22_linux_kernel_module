@@ -1,10 +1,16 @@
-My Monoprice 22 almost works with Aidyw's Bosto 22HD driver: https://github.com/aidyw/bosto-2g-linux-kernel-module.  According to Aidyw, his Bosto's USB device id is identical to my Monoprice (0b57:9016 via lsusb).  But the x-y range is much bigger, for some reason.
+My Monoprice 22 almost works with Aidyw's Bosto 22HD driver: https://github.com/aidyw/bosto-2g-linux-kernel-module.  According to Aidyw, his Bosto's USB device id is identical to my Monoprice (0b57:9016 via lsusb).  But the x-y range is much bigger, for some reason.  I also had some issues with the driver (no disrespect intended, mostly because I just can't figure out why things are done the way they are done).
 
-This repo is my take on the driver.  I removed a lot of what I considered unnecessary state information.  
+This repo is my take on the driver.  TI removed a lot of what I considered unnecessary state information.  
 
 This is highly experimental, and I know very little about Linux drivers.  
 
-Gimp and Krita work on my system, with pressure.  Both tip and eraser seem to do the same thing, much like aidyw's driver.  Monoprice seems to only have one button, even though it looks as 2.  I am working on stuff.
+Gimp and Krita work on my system, with pressure. 
+
+Known issues:
+- Both buttons on the stylus are detected as one button - 
+- Both tip and eraser register as button1
+- aidyw's driver reported the tool (tip/eraser) as an absolute valuator[3], which seems crazy to me.
+
 
 Aidyw's readme follows
 ======================
