@@ -87,7 +87,7 @@ static const int hw_btnevents[] = {
 */
 
 	//BTN_DIGI, BTN_TOUCH, BTN_STYLUS, BTN_STYLUS2, BTN_TOOL_PEN, BTN_TOOL_BRUSH, BTN_TOOL_RUBBER, BTN_TOOL_PENCIL, BTN_TOOL_AIRBRUSH, BTN_TOOL_FINGER, BTN_TOOL_MOUSE
-	BTN_TOUCH, BTN_TOOL_PEN, BTN_TOOL_RUBBER, BTN_STYLUS, BTN_STYLUS2
+  BTN_TOUCH, BTN_TOOL_PEN, BTN_TOOL_RUBBER, BTN_STYLUS //, BTN_STYLUS2
 };
 
 struct bosto_2g {
@@ -98,11 +98,8 @@ struct bosto_2g {
 	struct urb *irq;
 	const struct bosto_2g_features *features;
 	unsigned int current_tool;
-  //	unsigned int current_id;
-  //	bool tool_update;
 	bool stylus_btn_state;
 	bool stylus_prox;
-  //	bool report;
 	char name[64];
 	char phys[32];
 };
@@ -143,8 +140,8 @@ static const int hw_mscevents[] = {
 };
 
 static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
-  bool tool_update = false;
-  bool report = false;
+  bool update = false;
+  bool xyp_update = false;
   
   unsigned char *data = bosto_2g->data;
   struct input_dev *input_dev = bosto_2g->dev;
@@ -162,10 +159,9 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
 	  data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], jiffies);
   
   switch (pkt_type) {
-    /* tool prox out */
-  case 1:
+  case 1: //0x80 - idle, toolchange follows
     bosto_2g->stylus_btn_state = false;
-    if( bosto_2g->stylus_prox) {		// Three 0x80 indicates stylus out of proximity
+    if( bosto_2g->stylus_prox) { //if we were in proximity, withdraw
       // Release all the buttons on tool out
       input_report_key(input_dev, BTN_STYLUS, 0); dev_dbg(&dev->dev, "Bosto BUTTON: BTN_STYLUS released");
       input_report_key(input_dev, BTN_TOUCH, 0); dev_dbg(&dev->dev, "Bosto BUTTON: BTN_TOUCH released");
@@ -176,79 +172,56 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
       //input_sync(input_dev);
       bosto_2g->current_tool = 0;
       //bosto_2g->current_tool = 0;
-      tool_update = false;
       bosto_2g->stylus_prox = false;
-      report = true;
+      update = true;
       dev_dbg(&dev->dev, "Bosto TOOL OUT");
-    } else {
-      tool_update = false;
-      report = false;
     }
     break;
-    // button event
-  case 2:
+  
+  case 2: //0xC2 - tool change
     bosto_2g->stylus_prox = true;
     dev_dbg(&dev->dev, "Bosto TOOL UPDATE");
-    switch (data[3] & 0xf0) {
-      // Stylus Tip in prox. Bosto 22HD
-    case 0x20:
-      if(BTN_TOOL_PEN != bosto_2g->current_tool){
-	bosto_2g->current_tool = BTN_TOOL_PEN;
-	input_report_key(input_dev, BTN_TOOL_PEN, 1);
-	dev_dbg(&dev->dev, "Bosto BUTTON: PEN pressed");
+    {
+      unsigned int new_tool = 0;
+      switch (data[3] & 0xF0) {
+      case 0x20: new_tool = BTN_TOOL_PEN; break;
+      case 0xA0: new_tool = BTN_TOOL_RUBBER; break;
+      default:
+	dev_dbg(&dev->dev, "Unknown tablet tool %02x ", new_tool);
+	new_tool = 0; //error condition
       }
-      break;
-      /* Stylus Eraser in prox. Bosto 22HD */
-    case 0xa0:
-      if(BTN_TOOL_RUBBER != bosto_2g->current_tool){
-	bosto_2g->current_tool = BTN_TOOL_RUBBER;
-	input_report_key(input_dev, BTN_TOOL_RUBBER, 1);
-	dev_dbg(&dev->dev, "Bosto BUTTON: RUBBER pressed");
+      if (new_tool != bosto_2g->current_tool){
+	input_report_key(input_dev, bosto_2g->current_tool, 0); //remove old tool
+	input_report_key(input_dev, new_tool, 1); //add new tool
+        bosto_2g->current_tool = new_tool;
       }
-      break;
-     default:
-      bosto_2g->current_tool = 0; dev_dbg(&dev->dev, "Unknown tablet tool %02x ", data[0]);
     }
-    report = true;
+    update = true;
     break;
     
-    /* Stylus in proximity */
-  case 3:
+  case 3: //proximity or touch
     bosto_2g->stylus_prox = true;
     x = get_unaligned_be16(&data[2]); //because data2 is high and data3 is low!
     y = get_unaligned_be16(&data[4]);
-    p = get_unaligned_be16(&data[6]) >> 6;
+    p = (get_unaligned_be16(&data[6]) >> 6) << 1; //0 pressure on no touch is consistent
     input_report_key(input_dev, BTN_TOUCH,(data[1] & 0xF0) == 0xE0 ? 1 : 0);
-    
-    /*				if((data[1] & 0xF0) == 0xE0){ //touch
-				input_report_key(input_dev, BTN_TOUCH, 1); dev_dbg(&dev->dev, "Bosto TOOL: TOUCH");
-				p = get_unaligned_be16(&data[6]) >> 6;
-				} else { //hover
-				p = 0;
-				input_report_key(input_dev, BTN_TOUCH, 0); dev_dbg(&dev->dev, "Bosto TOOL: FLOAT");
-				}
-    */
-    if ((data[1] >> 1) & 1) {
-      if (!bosto_2g->stylus_btn_state) {
-	input_report_key(input_dev, BTN_STYLUS, 1);
-	bosto_2g->stylus_btn_state = true;
-	dev_dbg(&dev->dev, "Bosto BUTTON: BTN_STYLUS pressed");
+    {
+      bool new_state = (data[1] & 0x2);
+      if (new_state != bosto_2g->stylus_btn_state){
+	input_report_key(input_dev, BTN_STYLUS, new_state); //make press
+	bosto_2g->stylus_btn_state = true; //and record for posterity.
+	dev_dbg(&dev->dev, "Bosto BUTTON: BTN_STYLUS");
       }
-    } else if (bosto_2g->stylus_btn_state){
-      input_report_key(input_dev, BTN_STYLUS, 0);
-      bosto_2g->stylus_btn_state = false;
-      dev_dbg(&dev->dev, "Bosto BUTTON: BTN_STYLUS released");
-    } 
-    report = true;
-    tool_update = true;
+    }	
+    xyp_update = true;
+    update = true;
     break;
    
   default:
     dev_dbg(&dev->dev, "Error packet. Packet data[1]:  %02x ", data[1]);
-    report = false;
   }
   
-  if(tool_update) {
+  if(xyp_update) {
     input_report_abs(input_dev, ABS_X, x);
     input_report_abs(input_dev, ABS_Y, y);
     input_report_abs(input_dev, ABS_PRESSURE, p);
@@ -257,7 +230,7 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     dev_dbg(&dev->dev, "Bosto ABS_Y:  %02x ", y);
     dev_dbg(&dev->dev, "Bosto ABS_PRESSURE:  %02x ", p);
   }
-  if(report){
+  if(update){
     input_report_abs(input_dev, ABS_MISC, bosto_2g->current_tool); //a little bogus - tools not enum'd
     input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
     input_sync(input_dev);
@@ -265,7 +238,6 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     dev_dbg(&dev->dev, "Bosto MSC_SERIAL:  %02x ", bosto_2g->features->pid);
     dev_dbg(&dev->dev, "Bosto EV_SYNC.");
   }
-  tool_update = false;
 }
 
 static void bosto_2g_irq(struct urb *urb)
