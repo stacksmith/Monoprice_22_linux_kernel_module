@@ -53,11 +53,11 @@ MODULE_LICENSE(DRIVER_LICENSE);
 #define PKGLEN_MAX	10
 
 /* device IDs */
-#define STYLUS_DEVICE_ID	0x02
-#define TOUCH_DEVICE_ID		0x03
-#define CURSOR_DEVICE_ID	0x06
-#define ERASER_DEVICE_ID	0x0A
-#define PAD_DEVICE_ID		0x0F
+//#define STYLUS_DEVICE_ID	0x02
+//#define TOUCH_DEVICE_ID		0x03
+//#define CURSOR_DEVICE_ID	0x06
+//#define ERASER_DEVICE_ID	0x0A
+//#define PAD_DEVICE_ID		0x0F
 
 /* match vendor and interface info */
 
@@ -190,22 +190,17 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
     switch (data[3] & 0xf0) {
       // Stylus Tip in prox. Bosto 22HD
     case 0x20:
-      if((bosto_2g->current_id == ERASER_DEVICE_ID) | (bosto_2g->current_id == 0)) {
-	bosto_2g->current_id = STYLUS_DEVICE_ID;
+      if(BTN_TOOL_PEN != bosto_2g->current_id){
 	bosto_2g->current_tool = BTN_TOOL_PEN;
 	input_report_key(input_dev, BTN_TOOL_PEN, 1);
-	dev_dbg(&dev->dev, "Bosto TOOL ID: STYLUS");
 	dev_dbg(&dev->dev, "Bosto BUTTON: PEN pressed");
       }
       break;
-      
       /* Stylus Eraser in prox. Bosto 22HD */
     case 0xa0:
-      if((bosto_2g->current_id == STYLUS_DEVICE_ID) | (bosto_2g->current_id == 0)){
-	bosto_2g->current_id = ERASER_DEVICE_ID;
+      if(BTN_TOOL_RUBBER != bosto_2g->current_tool){
 	bosto_2g->current_tool = BTN_TOOL_RUBBER;
 	input_report_key(input_dev, BTN_TOOL_RUBBER, 1);
-	dev_dbg(&dev->dev, "Bosto TOOL ID: ERASER");
 	dev_dbg(&dev->dev, "Bosto BUTTON: RUBBER pressed");
       }
       break;
