@@ -407,11 +407,11 @@ static int bosto_2g_probe(struct usb_interface *intf, const struct usb_device_id
   for (i = 0; i < ARRAY_SIZE(hw_absevents); ++i)
     __set_bit(hw_absevents[i], input_dev->absbit);
   
-  //for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i)
-  //  __set_bit(hw_btnevents[i], input_dev->keybit);
-  input_dev->keybit[BIT_WORD(BTN_DIGI)] |= BIT_MASK(BTN_TOOL_PEN) | BIT_MASK (BTN_TOUCH) | BIT_MASK (BTN_TOOL_RUBBER) | BIT_MASK (BTN_STYLUS);
-  for(i=0;i<sizeof(hw_btnevents)/sizeof(hw_btnevents[0]);i++)
-	  __set_bit(hw_btnevents[i], input_dev->keybit);
+  for (i = 0; i < ARRAY_SIZE(hw_btnevents); ++i)
+    __set_bit(hw_btnevents[i], input_dev->keybit);
+  //  input_dev->keybit[BIT_WORD(BTN_DIGI)] |= BIT_MASK(BTN_TOOL_PEN) | BIT_MASK (BTN_TOUCH) | BIT_MASK (BTN_TOOL_RUBBER) | BIT_MASK (BTN_STYLUS);
+  //for(i=0;i<sizeof(hw_btnevents)/sizeof(hw_btnevents[0]);i++)
+  //	  __set_bit(hw_btnevents[i], input_dev->keybit);
   
   for (i = 0; i < ARRAY_SIZE(hw_mscevents); ++i)
     __set_bit(hw_mscevents[i], input_dev->mscbit);
