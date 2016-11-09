@@ -423,7 +423,9 @@ static int bosto_2g_probe(struct usb_interface *intf, const struct usb_device_id
 		       0, bosto_2g->features->max_y, 0, 0);
   input_abs_set_res(input_dev, ABS_Y, bosto_2g->features->res_y);
   input_set_abs_params(input_dev, ABS_PRESSURE,
-		       0, bosto_2g->features->max_pressure, 0, 0);		 
+		       0, bosto_2g->features->max_pressure, 0, 0);
+  
+  __set_bit(INPUT_PROP_DIRECT, input_dev->propbit);
   
   endpoint = &intf->cur_altsetting->endpoint[0].desc;
   usb_fill_int_urb(bosto_2g->irq, dev,
