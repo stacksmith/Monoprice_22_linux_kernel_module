@@ -1,15 +1,17 @@
 My Monoprice 22 almost works with Aidyw's Bosto 22HD driver: https://github.com/aidyw/bosto-2g-linux-kernel-module.  According to Aidyw, his Bosto's USB device id is identical to my Monoprice (0b57:9016 via lsusb).  But the x-y range is much bigger, for some reason.  I also had some issues with the driver (no disrespect intended, mostly because I just can't figure out why things are done the way they are done).
 
-This repo is my take on the driver.  TI removed a lot of what I considered unnecessary state information.  
+This repo is my take on the driver.  I tried to work to https://www.kernel.org/doc/Documentation/input/event-codes.txt 
 
-This is highly experimental, and I know very little about Linux drivers.  
+The dirver now does the following:
+  - BTN_TOOL_PEN and BUTTON_TOOL_RUBBER are signaled as soon as they are in hover range;
+  - BTN_TOUCH is set when stylus or rubber touch the screen;
+  - BTN_STYLUS is set while button pressed;
+  - Initialization has been reworked;
+  - packet decoder keeps no state, much more compact
+  - GIMP and KRITA work, but eraser is not recognized...TODO...
+  - absolute valuator 3 used to report the tool, removed.
 
-Gimp and Krita work on my system, with pressure. 
-
-Known issues:
-- Both buttons on the stylus are detected as one button - 
-- Both tip and eraser register as button1
-- aidyw's driver reported the tool (tip/eraser) as an absolute valuator[3], which seems crazy to me.
+This is highly experimental, and I know very little about Linux drivers.  It seems stable and inserting/removing is very easy with `sudo make uninstall`
 
 
 Aidyw's readme follows
