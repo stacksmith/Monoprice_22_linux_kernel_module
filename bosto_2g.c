@@ -163,7 +163,7 @@ static void bosto_2g_parse_packet(struct bosto_2g *bosto_2g ){
       input_report_abs(input_dev,ABS_Y,get_unaligned_be16(&data[4]));
       input_report_abs(input_dev,ABS_PRESSURE,(get_unaligned_be16(&data[6]) >> 6) << 1);
     }
-  input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
+  //  input_event(input_dev, EV_MSC, MSC_SERIAL, bosto_2g->features->pid);
   input_sync(input_dev);
 
 }
