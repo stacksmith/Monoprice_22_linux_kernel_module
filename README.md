@@ -31,6 +31,7 @@ You can try checking
 - `lsusb` for 0b57:9016;
 - `lsmod | grep mono` for mono_22
 - `cat /proc/bus/input/devices` to see where your device is attached
+
 With xinput, you can look try
 - `xinput` and look for 'Monoprice 22'
 - `xinput list --long "Monoprice 22"`
@@ -47,12 +48,12 @@ See aidyw's repo for more information about debugging the driver.
 References
 ==========
 based on original drivers by  <weixing@hanwang.com.cn>
-http://linux.fjfi.cvut.cz/~taxman/hw/hanvon/
-https://github.com/exaroth/pentagram_virtuoso_drivers/blob/master/hanvon.c
-further modified and improved by aidyw https://github.com/aidyw/bosto-2g-linux-kernel-module
+- http://linux.fjfi.cvut.cz/~taxman/hw/hanvon/
+- https://github.com/exaroth/pentagram_virtuoso_drivers/blob/master/hanvon.c
+- further modified and improved by aidyw https://github.com/aidyw/bosto-2g-linux-kernel-module
 
 The driver was built to these guidelines:
- https://www.kernel.org/doc/Documentation/input/event-codes.txt
- http://linuxwacom.sourceforge.net/wiki/index.php/Kernel_Input_Event_Overview
+- https://www.kernel.org/doc/Documentation/input/event-codes.txt
+- http://linuxwacom.sourceforge.net/wiki/index.php/Kernel_Input_Event_Overview
 
 
