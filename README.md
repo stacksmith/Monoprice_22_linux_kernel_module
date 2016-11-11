@@ -44,4 +44,15 @@ Hacking
 Obviously, sudo make uninstall and make clean as needed...
 See aidyw's repo for more information about debugging the driver.
 
+References
+==========
+based on original drivers by  <weixing@hanwang.com.cn>
+http://linux.fjfi.cvut.cz/~taxman/hw/hanvon/
+https://github.com/exaroth/pentagram_virtuoso_drivers/blob/master/hanvon.c
+further modified and improved by aidyw https://github.com/aidyw/bosto-2g-linux-kernel-module
+
+The driver was built to these guidelines:
+ https://www.kernel.org/doc/Documentation/input/event-codes.txt
+ http://linuxwacom.sourceforge.net/wiki/index.php/Kernel_Input_Event_Overview
+
 
