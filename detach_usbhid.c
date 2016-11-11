@@ -37,7 +37,7 @@ int main() {
 	    if (res == 0)
 	    {
 	      kernelDriverDetached = 1;
-	      printf("Driver Module detached from bosto device.\n");
+	      printf("Driver Module detached from mono device.\n");
 	    }
 	    else
 	    {

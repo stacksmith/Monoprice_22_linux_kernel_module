@@ -1,0 +1,2 @@
+# Rules for hotplugging Monoprice 22 tablets
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0b57", ATTR{idProduct}=="9016", RUN+="/usr/local/bin/load_mono_22.sh"
