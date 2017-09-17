@@ -1,3 +1,7 @@
+Official repo moved to https://github.com/odysseywestra/Monoprice_22_linux_kernel_module as of Sept 15 2017.
+
+This is here for historical reasons only.
+========================================
 This is an experimental driver for Monoprice 22
 
 Current status: stable as of 11 Nov 2016.  Please open issues for any bugs you find.
